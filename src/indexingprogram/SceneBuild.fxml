@@ -29,7 +29,7 @@
                </children>
             </HBox>
             <Button fx:id="openButton" mnemonicParsing="false" onMouseClicked="#locateFile" text="Open File" />
-            <Button fx:id="buildIndex" mnemonicParsing="false" text="Build Index" />
+            <Button fx:id="buildIndex" mnemonicParsing="false" onMouseClicked="#buildIndex" text="Build Index" />
          </children>
       </HBox>
       <HBox alignment="CENTER" prefHeight="20.0" prefWidth="200.0" spacing="20.0">
@@ -43,7 +43,7 @@
                   </TextField>
                </children>
             </HBox>
-            <Button fx:id="testPhrase" mnemonicParsing="false" text="Check Phrase" />
+            <Button fx:id="testPhrase" mnemonicParsing="false" onMouseClicked="#checkPhraase" text="Check Phrase" />
          </children>
       </HBox>
       <TextArea fx:id="resultDisplay" editable="false" prefHeight="200.0" prefWidth="200.0" promptText="Phase Result">
