@@ -21,7 +21,7 @@
             <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
                <children>
                   <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Path:" />
-                  <TextField fx:id="path" text="C://">
+                  <TextField fx:id="path" promptText="Click on Open File or Type the path to file manually">
                      <opaqueInsets>
                         <Insets />
                      </opaqueInsets>

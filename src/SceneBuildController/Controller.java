@@ -9,6 +9,7 @@ import indexingprogram.IndexHolder;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -22,6 +23,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import sun.security.ssl.Debug;
 
 /**
  * FXML Controller class
@@ -80,25 +84,65 @@ public class Controller implements Initializable
         if (file.exists() && file.isFile())
         {
             System.out.println("file exists, and it is a file");
-            Scanner sc; 
-            try {
-                sc = new Scanner(file);
-                int wordCount = 0;
-                String[] s;
-                while (sc.hasNextLine()) 
-                {
-                    s = sc.nextLine().split(" ");
+             
+            String ext = filePath.substring(filePath.lastIndexOf("."));
+            if( ext.equalsIgnoreCase(".pdf")  )
+            {
+                PDDocument pdDoc = null;
+                PDFTextStripper pdfStripper;
+
+                String parsedText;
+
+                //check if file is pdf
+                try {     
+                    pdDoc = PDDocument.load(file);
+                    pdfStripper = new PDFTextStripper();
+                    parsedText = pdfStripper.getText(pdDoc);
+                    
+                    int wordCount = 0;
+                    String[] s;
+                    s = parsedText.split(" ");
                     for(int i = 0; i < s.length; i++)
                     {
                         indexdata.AddIndex(s[i], wordCount);
                         wordCount++;
                     }
+                    
+                     Debug.println("word count",wordCount + ""  );
+                    //System.out.println(parsedText.replaceAll("[^A-Za-z0-9. ]+", ""));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        if (pdDoc != null)
+                            pdDoc.close();
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
                 }
-            } 
-            catch (FileNotFoundException ex) 
-            {
-                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            }else{
+               
+                Scanner sc; 
+                try {
+                    sc = new Scanner(file);
+                    int wordCount = 0;
+                    String[] s;
+                    while (sc.hasNextLine()) 
+                    {
+                        s = sc.nextLine().split(" ");
+                        for(int i = 0; i < s.length; i++)
+                        {
+                            indexdata.AddIndex(s[i], wordCount);
+                            wordCount++;
+                        }
+                    }
+
+                    Debug.println("word count",wordCount + ""  );
+                } 
+                catch (FileNotFoundException ex) 
+                {
+                    Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }           
         } 
         else
         {
@@ -114,14 +158,28 @@ public class Controller implements Initializable
     private void checkPhraase(MouseEvent event) 
     {
         String phrase = phraseInput.getText();
-        if(phrase == null || phrase == "")
+        if(phrase == null || phrase.equalsIgnoreCase(""))
         {
             resultDisplay.setText("Empty Phrase");
         } else{
             //Todo: calculate the pharase
-           
+            List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
             
-            resultDisplay.setText("Empty Phrase");
+            if((boolean)phraseValue.get(0))
+            {
+                String s = "";
+                for(int i = 1; i < phraseValue.size(); i++)
+                {
+                    if( i == phraseValue.size() - 1)
+                        s += (int)phraseValue.get(i);
+                    else
+                        s += (int)phraseValue.get(i) + ",";
+                }
+                
+                resultDisplay.setText("Phrase occurend : " + phraseValue.size() + "\nPhrase found at index : " + s);
+            }
+            else
+                resultDisplay.setText("Phrase not found");
         }
     }
             
@@ -132,8 +190,8 @@ public class Controller implements Initializable
                 new File(System.getProperty("user.home"))
             );                 
             fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("TXT", "*.txt")
-                //new FileChooser.ExtensionFilter("PNG", "*.png")
+                new FileChooser.ExtensionFilter("TXT", "*.txt"),
+                new FileChooser.ExtensionFilter("PDF", "*.pdf")
             );
     }
 }
