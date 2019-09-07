@@ -176,7 +176,7 @@ public class Controller implements Initializable
                         s += (int)phraseValue.get(i) + ",";
                 }
                 
-                resultDisplay.setText("Phrase occurend : " + phraseValue.size() + "\nPhrase found at index : " + s);
+                resultDisplay.setText("Phrase occurend : " + (phraseValue.size() - 1) + "\nPhrase found at index : " + s);
             }
             else
                 resultDisplay.setText("Phrase not found");
