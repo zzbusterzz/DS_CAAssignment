@@ -10,7 +10,11 @@ import indexingprogram.WordDetail;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -23,7 +27,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import sun.security.ssl.Debug;
@@ -51,36 +57,60 @@ public class Controller implements Initializable {
     @FXML
     private TextArea resultDisplay;
 
+    private Stage primaryStage;
     /**
      * Initializes the controller class.
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // TODO
         alert = new Alert(AlertType.NONE);
         indexdata = new IndexHolder();
+        
     }
 
     @FXML
     private void locateFile(MouseEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open text file");
-
-        configureFileChooser(fileChooser);
-        File file = fileChooser.showOpenDialog(openButton.getScene().getWindow());
-        if (file != null) {
-            path.setText(file.toString());
+        primaryStage = (Stage) openButton.getScene().getWindow();
+        //FileChooser fileChooser = new FileChooser();
+        //fileChooser.setTitle("Open text file");
+        //configureFileChooser(fileChooser);
+        //File file = fileChooser.showOpenDialog(openButton.getScene().getWindow());
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Open files directory");
+        File defaultDirectory;
+        defaultDirectory = new File(System.getProperty("user.home"));
+        chooser.setInitialDirectory(defaultDirectory);
+        File selectedDirectory = chooser.showDialog(primaryStage);
+        if (selectedDirectory != null) {
+            path.setText(selectedDirectory.toString());
         }
     }
 
     @FXML
     private void buildIndex(MouseEvent event) {
-        String filePath = path.getText();
+        String filePath = path.getText();//get the particular file or get the particular folder for files to look
+        if(filePath.contains(".pdf") || filePath.contains(".txt")){//Not needed as we are using directory selector
+            ScanFile(filePath);
+        } else{//Get all the pdf and txt files in that path
+            File folder = new File(filePath);
+            String[] files = folder.list();
+            for (String file : files)
+            {
+                if(file.contains(".pdf") || file.contains(".txt")){
+                     ScanFile(filePath + "/" + file);
+                }
+            }
+        }
+    }
+    
+    void ScanFile(String filePath)
+    {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
             System.out.println("file exists, and it is a file");
-
             String ext = filePath.substring(filePath.lastIndexOf("."));
+            Path path = Paths.get(filePath);
+            
             if (ext.equalsIgnoreCase(".pdf")) {
                 PDDocument pdDoc = null;
                 PDFTextStripper pdfStripper;
@@ -97,7 +127,7 @@ public class Controller implements Initializable {
                     {
                         String[] splitSpace = lineString[i].split(" ");
                         for (int j = 0; j < splitSpace.length; j++) {
-                            indexdata.AddIndex(splitSpace[j], new WordDetail(wordCount, i+1));
+                            indexdata.AddIndex(path.getFileName().toString(), splitSpace[j], new WordDetail(wordCount, i+1));
                             wordCount++;
                         }
                     }
@@ -126,7 +156,7 @@ public class Controller implements Initializable {
                     while (sc.hasNextLine()) {
                         s = sc.nextLine().split(" ");
                         for (int i = 0; i < s.length; i++) {
-                            indexdata.AddIndex(s[i], new WordDetail(wordCount, lineNumber));
+                            indexdata.AddIndex(path.getFileName().toString(), s[i], new WordDetail(wordCount, lineNumber));
                             wordCount++;
                         }
                         lineNumber++;
@@ -154,34 +184,39 @@ public class Controller implements Initializable {
         } else {
             //Todo: calculate the pharase
             List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
-
+            int occuranceCount = 0;
             if ((boolean) phraseValue.get(0)) {
                 String s = "";
+                HashMap<String, List<WordDetail>> map = (HashMap<String, List<WordDetail>>) phraseValue.get(1);//get the result hashmap
                 WordDetail detail;
-                for (int i = 1; i < phraseValue.size(); i++) {
-                    detail = (WordDetail) phraseValue.get(i);
-                    if (i == phraseValue.size() - 1) {
-                        s += "Index - "+ detail.getIndex() + ", Line no - "+ detail.getLineNumber();
-                    } else {
-                        s += "Index - " + detail.getIndex() + ", Line no - "+ detail.getLineNumber() + "\n";
+                for (Map.Entry<String, List<WordDetail>> entry : map.entrySet()) {
+                    s += "\n\nFile : " + entry.getKey() + "\n";
+                    List<WordDetail> builtIndex = entry.getValue();
+                    for (int i = 0; i < builtIndex.size(); i++) {
+                        occuranceCount++;
+                        detail = builtIndex.get(i);
+                        if (i == builtIndex.size() - 1) {
+                            s += "Index - "+ detail.getIndex() + ", Line no - "+ detail.getLineNumber();
+                        } else {
+                            s += "Index - " + detail.getIndex() + ", Line no - "+ detail.getLineNumber() + "\n";
+                        }
                     }
                 }
-
-                resultDisplay.setText("Phrase occurend : " + (phraseValue.size() - 1) + "\nPhrase found at following :\n" + s);
+                resultDisplay.setText("Phrase occured : " + occuranceCount + "\nPhrase found at following :" + s);
             } else {
                 resultDisplay.setText("Phrase not found");
             }
         }
     }
 
-    private static void configureFileChooser(final FileChooser fileChooser) {
-        fileChooser.setTitle("Open text files");
-        fileChooser.setInitialDirectory(
-                new File(System.getProperty("user.home"))
-        );
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("TXT", "*.txt"),
-                new FileChooser.ExtensionFilter("PDF", "*.pdf")
-        );
-    }
+//    private static void configureFileChooser(final FileChooser fileChooser) {
+//        fileChooser.setTitle("Open text files");
+//        fileChooser.setInitialDirectory(
+//                new File(System.getProperty("user.home"))
+//        );
+//        fileChooser.getExtensionFilters().addAll(
+//                new FileChooser.ExtensionFilter("TXT", "*.txt"),
+//                new FileChooser.ExtensionFilter("PDF", "*.pdf")
+//        );
+//    }
 }
