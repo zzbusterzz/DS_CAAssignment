@@ -5,7 +5,6 @@
  */
 package SceneBuildController;
 
-import com.sun.deploy.util.StringUtils;
 import indexingprogram.IndexHolder;
 import indexingprogram.WordDetail;
 import java.io.File;
@@ -45,7 +44,8 @@ public class Controller implements Initializable {
 
     private Alert alert;
     private IndexHolder indexdata;
-
+    private Stage primaryStage;
+    
     @FXML
     private TextField path;
     @FXML
@@ -59,7 +59,6 @@ public class Controller implements Initializable {
     @FXML
     private TextArea resultDisplay;
 
-    private Stage primaryStage;
 
     /**
      * Initializes the controller class.
@@ -115,8 +114,69 @@ public class Controller implements Initializable {
             }
         }
     }
+    
+    @FXML
+    private void checkPhraase(MouseEvent event) {
+        String phrase = phraseInput.getText();
+        if (phrase == null || phrase.equalsIgnoreCase("")) {
+            resultDisplay.setText("Empty Phrase");
+        } else {
+            //Todo: calculate the pharase
+            List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
+            int occuranceCount = 0;
+            int returnType = (Integer) phraseValue.get(0);//0- false 1-true 2-same mini word occuring multiple times in same word
+            if (returnType > 0) {
+                String s = "";
 
-    void ScanFile(String filePath) {
+                if (returnType == 2) {
+                    Pattern p = Pattern.compile(phrase.toLowerCase());
+                    HashMap<String, HashMap<String, List<WordDetail>>> map = (HashMap<String, HashMap<String, List<WordDetail>>>) phraseValue.get(1);//get the result hashmap
+                    WordDetail detail;
+                    for (Map.Entry<String, HashMap<String, List<WordDetail>>> entry : map.entrySet()) {
+                        s += "\n\nFile : " + entry.getKey() + "\n";
+                        for (Map.Entry<String, List<WordDetail>> entryChild : entry.getValue().entrySet()) {
+                            String key = entryChild.getKey();
+                            List<WordDetail> builtIndex = entryChild.getValue();
+                            for (int i = 0; i < builtIndex.size(); i++) {
+
+                                int j = 0;
+                                Matcher m = p.matcher(key.toLowerCase());
+                                while (m.find()) {
+                                    j++;
+                                }
+                                occuranceCount += j;
+                                detail = builtIndex.get(i);
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
+                            }
+                        }
+                    }
+                } else {
+                    HashMap<String, List<WordDetail>> map = (HashMap<String, List<WordDetail>>) phraseValue.get(1);//get the result hashmap
+                    WordDetail detail;
+
+                    for (Map.Entry<String, List<WordDetail>> entry : map.entrySet()) {
+                        s += "\n\nFile : " + entry.getKey() + "\n";
+                        List<WordDetail> builtIndex = entry.getValue();
+                        for (int i = 0; i < builtIndex.size(); i++) {
+                            occuranceCount++;
+
+                            detail = builtIndex.get(i);
+                            if (i == builtIndex.size() - 1) {
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber();
+                            } else {
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
+                            }
+                        }
+                    }
+                }
+                resultDisplay.setText("Phrase occured : " + occuranceCount + "\nPhrase found at following :" + s);
+            } else {
+                resultDisplay.setText("Phrase not found");
+            }
+        }
+    }
+    
+    private void ScanFile(String filePath) {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
             System.out.println("file exists, and it is a file");
@@ -184,65 +244,5 @@ public class Controller implements Initializable {
             alert.show();
         }
     }
-
-    @FXML
-    private void checkPhraase(MouseEvent event) {
-        String phrase = phraseInput.getText();
-        if (phrase == null || phrase.equalsIgnoreCase("")) {
-            resultDisplay.setText("Empty Phrase");
-        } else {
-            //Todo: calculate the pharase
-            List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
-            int occuranceCount = 0;
-            int returnType = (Integer) phraseValue.get(0);//0- false 1-true 2-same mini word occuring multiple times in same word
-            if (returnType > 0) {
-                String s = "";
-
-                if (returnType == 2) {
-                    Pattern p = Pattern.compile(phrase.toLowerCase());
-                    HashMap<String, HashMap<String, List<WordDetail>>> map = (HashMap<String, HashMap<String, List<WordDetail>>>) phraseValue.get(1);//get the result hashmap
-                    WordDetail detail;
-                    for (Map.Entry<String, HashMap<String, List<WordDetail>>> entry : map.entrySet()) {
-                        s += "\n\nFile : " + entry.getKey() + "\n";
-                        for (Map.Entry<String, List<WordDetail>> entryChild : entry.getValue().entrySet()) {
-                            String key = entryChild.getKey();
-                            List<WordDetail> builtIndex = entryChild.getValue();
-                            for (int i = 0; i < builtIndex.size(); i++) {
-
-                                int j = 0;
-                                Matcher m = p.matcher(key.toLowerCase());
-                                while (m.find()) {
-                                    j++;
-                                }
-                                occuranceCount += j;
-                                detail = builtIndex.get(i);
-                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
-                            }
-                        }
-                    }
-                } else {
-                    HashMap<String, List<WordDetail>> map = (HashMap<String, List<WordDetail>>) phraseValue.get(1);//get the result hashmap
-                    WordDetail detail;
-
-                    for (Map.Entry<String, List<WordDetail>> entry : map.entrySet()) {
-                        s += "\n\nFile : " + entry.getKey() + "\n";
-                        List<WordDetail> builtIndex = entry.getValue();
-                        for (int i = 0; i < builtIndex.size(); i++) {
-                            occuranceCount++;
-
-                            detail = builtIndex.get(i);
-                            if (i == builtIndex.size() - 1) {
-                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber();
-                            } else {
-                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
-                            }
-                        }
-                    }
-                }
-                resultDisplay.setText("Phrase occured : " + occuranceCount + "\nPhrase found at following :" + s);
-            } else {
-                resultDisplay.setText("Phrase not found");
-            }
-        }
-    }
+        
 }
