@@ -19,12 +19,14 @@ import sun.security.ssl.Debug;
 public class IndexHolder {
 
     private HashMap<String, HashMap<String, List<WordDetail>>> totalFileMap;
-
-    // private HashMap<String, List<WordDetail>> currentFileMap;
+    
+    private HashMap<String, List<WordDetail>> foundKeyWordPlaces;//Stores file name with 
+    
     public IndexHolder() {
         totalFileMap = new HashMap<String, HashMap<String, List<WordDetail>>>();
+        foundKeyWordPlaces = new HashMap<String, List<WordDetail>>();//Stores file name with 
     }
-
+    
     public void AddIndex(String fileName, String word, WordDetail wordPosDetails) {
         HashMap<String, List<WordDetail>> currentFileMap;
         if (totalFileMap.containsKey(fileName)) {
@@ -44,10 +46,8 @@ public class IndexHolder {
         }
     }
 
-    HashMap<String, List<WordDetail>> foundKeyWordPlaces = new HashMap<String, List<WordDetail>>();//Stores file name with 
-
     ///Checks for the phrase if exists
-    public List<Object> CheckForPhrase(String phrase) {
+    public List<Object> CheckForPhrase(String phrase) {//0- false 1-true 2-same mini word occuring multiple times in same word
         foundKeyWordPlaces.clear();
 
         HashMap<String, List<WordDetail>> currentFileMap;
@@ -65,30 +65,45 @@ public class IndexHolder {
         ArrayList tempArr = null;
         
         if (s == null || s.length == 0) {
-            return Arrays.asList(false);
+            return Arrays.asList(0);
         } else if (s.length == 1) {
+            HashMap<String, HashMap<String, List<WordDetail>>> localFileMap = new HashMap<String, HashMap<String, List<WordDetail>>>();
+            
+            
+            tempArr = new ArrayList();
+            tempArr.add(2); //Returns phrase as found with all the indexes where it was found
             for (Map.Entry<String, HashMap<String, List<WordDetail>>> entry : totalFileMap.entrySet()) {//iterate through parent hasmap table
+                HashMap<String, List<WordDetail>> localHashMap = new HashMap<String, List<WordDetail>>();
                 fileNameKey = entry.getKey();
                 currentFileMap = entry.getValue();
-                if (currentFileMap.containsKey(s[0])) {
-                    tempArr = new ArrayList();
-                    tempArr.add(true); //Returns phrase as found with all the indexes where it was found
-                    List<WordDetail> mappedValues = currentFileMap.get(s[0]);
-
-                    indexofFileWhereFoundContValues = new ArrayList();
-                    for (int i = 0; i < mappedValues.size(); i++) {
-                        indexofFileWhereFoundContValues.add(mappedValues.get(i));
+                indexofFileWhereFoundContValues = null;
+                
+                for (Map.Entry<String, List<WordDetail>> entryTest : currentFileMap.entrySet()) {//iterate through all index hasmap table
+                    indexofFileWhereFoundContValues = null;
+                    if(entryTest.getKey().toLowerCase().contains(phrase.toLowerCase())){//phrase is just a single word
+                        indexofFileWhereFoundContValues = new ArrayList();
+                        
+                        for (int i = 0; i < entryTest.getValue().size(); i++) {
+                            indexofFileWhereFoundContValues.add(entryTest.getValue().get(i));
+                        }
+                        localHashMap.put(entryTest.getKey(), indexofFileWhereFoundContValues);
+                        
+                        if(!localFileMap.containsKey(localHashMap))
+                            localFileMap.put(fileNameKey, localHashMap);
                     }
-                    foundKeyWordPlaces.put(fileNameKey, indexofFileWhereFoundContValues);
-                    tempArr.add(foundKeyWordPlaces);
-
                 }
             }
-            if(tempArr != null) return tempArr;
-            return Arrays.asList(false);
+            
+            if(localFileMap.size() > 0) {
+                tempArr.add(localFileMap);
+                return tempArr;
+            }
+            
+            //if(tempArr != null && tempArr.size() > 1) return tempArr;
+            return Arrays.asList(0);
         } else {
             tempArr = new ArrayList();
-            tempArr.add(true); //Returns phrase as found with all the indexes where it was found
+            tempArr.add(1); //Returns phrase as found with all the indexes where it was found
 
             for (Map.Entry<String, HashMap<String, List<WordDetail>>> entry : totalFileMap.entrySet()) {
                 fileNameKey = entry.getKey();
@@ -114,9 +129,9 @@ public class IndexHolder {
                     //first words indexes are kept which has ascending order for words till the final phrase where all the words are iterated
                     for (int i = 2; i < s.length; i++) {//check if words exist in the maps
                         if (!currentFileMap.containsKey(s[i])) {
-                            return Arrays.asList(false);
+                            return Arrays.asList(0);
                         } else if (continousWordsFound.size() == 0) {
-                            return Arrays.asList(false);
+                            return Arrays.asList(0);
                         } else {
                             val1 = currentFileMap.get(s[i]);
 

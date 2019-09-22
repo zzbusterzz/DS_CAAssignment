@@ -5,6 +5,7 @@
  */
 package SceneBuildController;
 
+import com.sun.deploy.util.StringUtils;
 import indexingprogram.IndexHolder;
 import indexingprogram.WordDetail;
 import java.io.File;
@@ -19,6 +20,8 @@ import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -28,7 +31,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -58,6 +60,7 @@ public class Controller implements Initializable {
     private TextArea resultDisplay;
 
     private Stage primaryStage;
+
     /**
      * Initializes the controller class.
      */
@@ -65,16 +68,12 @@ public class Controller implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         alert = new Alert(AlertType.NONE);
         indexdata = new IndexHolder();
-        
+
     }
 
     @FXML
     private void locateFile(MouseEvent event) {
         primaryStage = (Stage) openButton.getScene().getWindow();
-        //FileChooser fileChooser = new FileChooser();
-        //fileChooser.setTitle("Open text file");
-        //configureFileChooser(fileChooser);
-        //File file = fileChooser.showOpenDialog(openButton.getScene().getWindow());
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Open files directory");
         File defaultDirectory;
@@ -89,28 +88,41 @@ public class Controller implements Initializable {
     @FXML
     private void buildIndex(MouseEvent event) {
         String filePath = path.getText();//get the particular file or get the particular folder for files to look
-        if(filePath.contains(".pdf") || filePath.contains(".txt")){//Not needed as we are using directory selector
-            ScanFile(filePath);
-        } else{//Get all the pdf and txt files in that path
-            File folder = new File(filePath);
-            String[] files = folder.list();
-            for (String file : files)
-            {
-                if(file.contains(".pdf") || file.contains(".txt")){
-                     ScanFile(filePath + "/" + file);
+        File folder = new File(filePath);
+        if (filePath.contains(".pdf") || filePath.contains(".txt")) {//Not needed as we are using directory selector
+            if(folder.isDirectory()){
+                ScanFile(filePath);
+            } else{
+                alert.setAlertType(AlertType.WARNING);
+                alert.setHeaderText("Not a valid file path");
+                // show the dialog 
+                alert.show();
+            }
+        } else {//Get all the pdf and txt files in that path
+            if(folder.isDirectory()){
+                String[] files = folder.list();
+                for (String file : files) {
+                    if (file.contains(".pdf") || file.contains(".txt")) {
+                        ScanFile(filePath + "/" + file);
+                    }
                 }
+            } else{
+                alert.setAlertType(AlertType.WARNING);
+                alert.setHeaderText("Not a valid file/folder path");
+
+                // show the dialog 
+                alert.show();
             }
         }
     }
-    
-    void ScanFile(String filePath)
-    {
+
+    void ScanFile(String filePath) {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
             System.out.println("file exists, and it is a file");
             String ext = filePath.substring(filePath.lastIndexOf("."));
             Path path = Paths.get(filePath);
-            
+
             if (ext.equalsIgnoreCase(".pdf")) {
                 PDDocument pdDoc = null;
                 PDFTextStripper pdfStripper;
@@ -123,18 +135,16 @@ public class Controller implements Initializable {
 
                     int wordCount = 0;
                     String[] lineString = parsedText.split("\r\n");
-                    for(int i = 0; i < lineString.length; i++)//here i is our line number
+                    for (int i = 0; i < lineString.length; i++)//here i is our line number
                     {
                         String[] splitSpace = lineString[i].split(" ");
                         for (int j = 0; j < splitSpace.length; j++) {
-                            indexdata.AddIndex(path.getFileName().toString(), splitSpace[j], new WordDetail(wordCount, i+1));
+                            indexdata.AddIndex(path.getFileName().toString(), splitSpace[j], new WordDetail(wordCount, i + 1));
                             wordCount++;
                         }
                     }
-                    
 
                     Debug.println("word count", wordCount + "");
-                    //System.out.println(parsedText.replaceAll("[^A-Za-z0-9. ]+", ""));
                 } catch (Exception e) {
                     e.printStackTrace();
                     try {
@@ -146,7 +156,6 @@ public class Controller implements Initializable {
                     }
                 }
             } else {
-
                 Scanner sc;
                 try {
                     sc = new Scanner(file);
@@ -185,20 +194,48 @@ public class Controller implements Initializable {
             //Todo: calculate the pharase
             List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
             int occuranceCount = 0;
-            if ((boolean) phraseValue.get(0)) {
+            int returnType = (Integer) phraseValue.get(0);//0- false 1-true 2-same mini word occuring multiple times in same word
+            if (returnType > 0) {
                 String s = "";
-                HashMap<String, List<WordDetail>> map = (HashMap<String, List<WordDetail>>) phraseValue.get(1);//get the result hashmap
-                WordDetail detail;
-                for (Map.Entry<String, List<WordDetail>> entry : map.entrySet()) {
-                    s += "\n\nFile : " + entry.getKey() + "\n";
-                    List<WordDetail> builtIndex = entry.getValue();
-                    for (int i = 0; i < builtIndex.size(); i++) {
-                        occuranceCount++;
-                        detail = builtIndex.get(i);
-                        if (i == builtIndex.size() - 1) {
-                            s += "Index - "+ detail.getIndex() + ", Line no - "+ detail.getLineNumber();
-                        } else {
-                            s += "Index - " + detail.getIndex() + ", Line no - "+ detail.getLineNumber() + "\n";
+
+                if (returnType == 2) {
+                    Pattern p = Pattern.compile(phrase.toLowerCase());
+                    HashMap<String, HashMap<String, List<WordDetail>>> map = (HashMap<String, HashMap<String, List<WordDetail>>>) phraseValue.get(1);//get the result hashmap
+                    WordDetail detail;
+                    for (Map.Entry<String, HashMap<String, List<WordDetail>>> entry : map.entrySet()) {
+                        s += "\n\nFile : " + entry.getKey() + "\n";
+                        for (Map.Entry<String, List<WordDetail>> entryChild : entry.getValue().entrySet()) {
+                            String key = entryChild.getKey();
+                            List<WordDetail> builtIndex = entryChild.getValue();
+                            for (int i = 0; i < builtIndex.size(); i++) {
+
+                                int j = 0;
+                                Matcher m = p.matcher(key.toLowerCase());
+                                while (m.find()) {
+                                    j++;
+                                }
+                                occuranceCount += j;
+                                detail = builtIndex.get(i);
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
+                            }
+                        }
+                    }
+                } else {
+                    HashMap<String, List<WordDetail>> map = (HashMap<String, List<WordDetail>>) phraseValue.get(1);//get the result hashmap
+                    WordDetail detail;
+
+                    for (Map.Entry<String, List<WordDetail>> entry : map.entrySet()) {
+                        s += "\n\nFile : " + entry.getKey() + "\n";
+                        List<WordDetail> builtIndex = entry.getValue();
+                        for (int i = 0; i < builtIndex.size(); i++) {
+                            occuranceCount++;
+
+                            detail = builtIndex.get(i);
+                            if (i == builtIndex.size() - 1) {
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber();
+                            } else {
+                                s += "Index - " + detail.getIndex() + ", Line no - " + detail.getLineNumber() + "\n";
+                            }
                         }
                     }
                 }
@@ -208,15 +245,4 @@ public class Controller implements Initializable {
             }
         }
     }
-
-//    private static void configureFileChooser(final FileChooser fileChooser) {
-//        fileChooser.setTitle("Open text files");
-//        fileChooser.setInitialDirectory(
-//                new File(System.getProperty("user.home"))
-//        );
-//        fileChooser.getExtensionFilters().addAll(
-//                new FileChooser.ExtensionFilter("TXT", "*.txt"),
-//                new FileChooser.ExtensionFilter("PDF", "*.pdf")
-//        );
-//    }
 }
