@@ -20,7 +20,6 @@ import javafx.stage.Stage;
  */
 public class IndexingProgram extends Application {
     
-    
     @Override
     public void start(Stage primaryStage) {
          // just load fxml file and display it in the stage:
@@ -30,6 +29,9 @@ public class IndexingProgram extends Application {
         try {
             root = loader.load();
             Scene scene = new Scene(root);
+            String css = getClass().getResource("cool.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            primaryStage.setOpacity(0.95);
             primaryStage.setScene(scene);
             primaryStage.show();
         } catch (IOException ex) {

@@ -14,108 +14,93 @@ import java.util.List;
  *
  * @author 1
  */
-public class IndexHolder 
-{
-    
-    private HashMap<String, List<Integer>> map;
-    
-    public IndexHolder()
-    {
-        map = new HashMap<String, List<Integer>>();
+public class IndexHolder {
+
+    private HashMap<String, List<WordDetail>> map;
+
+    public IndexHolder() {
+        map = new HashMap<String, List<WordDetail>>();
     }
-   
-    public void AddIndex(String word, int charPos)
-    {
-        if(map.containsKey(word))
-        {
-            List<Integer> intg = map.get(word);
-            intg.add(charPos);
-            //map.put(word, intg);
-        }
-        else{
-            List<Integer> intg = new ArrayList<Integer>();
-            intg.add(charPos);
+
+    public void AddIndex(String word, WordDetail wordPosDetails) {
+        if (map.containsKey(word)) {
+            List<WordDetail> intg = map.get(word);//get the assigned integer list
+            intg.add(wordPosDetails);
+        } else {
+            List<WordDetail> intg = new ArrayList<WordDetail>();
+            intg.add(wordPosDetails);
             map.put(word, intg);
         }
     }
-    
+
     ///Checks for the phrase if exists
-    public List<Object> CheckForPhrase(String phrase)
-    {
-        String[] s = phrase.split(" "); 
-        
+    public List<Object> CheckForPhrase(String phrase) {
+        String[] s = phrase.split(" ");
+
         List<Integer> continousWordsFound = new ArrayList<Integer>();
         List<Integer> toremoveFromFoundIndex = new ArrayList<Integer>();
-        
-        if(s.length == 0)
+
+        if (s.length == 0) {
             return Arrays.asList(false);
-        else if(s.length == 1)
-            if(map.containsKey(s[0]))
-            {
+        } else if (s.length == 1) {
+            if (map.containsKey(s[0])) {
                 ArrayList tempArr = new ArrayList();
                 tempArr.add(true); //Returns phrase as found with all the indexes where it was found
-                List<Integer> mappedValues = map.get(s[0]);
-                for(int  i = 0; i < mappedValues.size(); i++)
+                List<WordDetail> mappedValues = map.get(s[0]);
+                for (int i = 0; i < mappedValues.size(); i++) {
                     tempArr.add(mappedValues.get(i));
-                
+                }
+
                 return tempArr;
-            }
-            else
+            } else {
                 return Arrays.asList(false);
-        else if(!map.containsKey(s[0]) || !map.containsKey(s[1]))
+            }
+        } else if (!map.containsKey(s[0]) || !map.containsKey(s[1])) {
             return Arrays.asList(false);
-        else
-        {
+        } else {
             //TODO calculcate index
-            List<Integer> val = map.get(s[0]);
-            List<Integer> val1 = map.get(s[1]);
-            
-            for(int j = 0; j < val.size(); j++)//match the first word and second word indexes and get the list of values where they are ascending order
+            List<WordDetail> val = map.get(s[0]);
+            List<WordDetail> val1 = map.get(s[1]);
+
+            for (int j = 0; j < val.size(); j++)//match the first word and second word indexes and get the list of values where they are ascending order
             {
-                for(int k = 0; k < val1.size(); k++)
-                {
-                    if(val.get(j)+1 == val1.get(k))
-                    {
+                for (int k = 0; k < val1.size(); k++) {
+                    if (val.get(j).getIndex() + 1 == val1.get(k).getIndex()) {
                         continousWordsFound.add(j);
                     }
                 }
             }
-            
+
             //use the ascending order values from above to determine which index has 
             //ascending order  by looping through indexs of words in phrase other then the above two
             //first words indexes are kept which has ascending order for words till the final phrase where all the words are iterated
-            
-            for(int i = 2; i < s.length; i++)//check if words exist in the maps
+            for (int i = 2; i < s.length; i++)//check if words exist in the maps
             {
-                if(!map.containsKey(s[i]))  return Arrays.asList(false);
-                else if(continousWordsFound.size() == 0) return Arrays.asList(false);
-                else
-                {
+                if (!map.containsKey(s[i])) {
+                    return Arrays.asList(false);
+                } else if (continousWordsFound.size() == 0) {
+                    return Arrays.asList(false);
+                } else {
                     val1 = map.get(s[i]);
 
-                    for(int j = 0; j < continousWordsFound.size(); j++)
-                    {
+                    for (int j = 0; j < continousWordsFound.size(); j++) {
                         int valueToTest = continousWordsFound.get(j);
                         boolean matched = false;
-                        
-                        for(int k = 0; k < val1.size(); k++)
-                        {
-                            if(val.get(valueToTest)+i == val1.get(k))
-                            {
+
+                        for (int k = 0; k < val1.size(); k++) {
+                            if (val.get(valueToTest).getIndex() + i == val1.get(k).getIndex()) {
                                 matched = true;
                             }
                         }
-                        
-                        if(!matched)
-                        {
+
+                        if (!matched) {
                             toremoveFromFoundIndex.add(valueToTest);
                         }
                     }
 
-                    if(!toremoveFromFoundIndex.isEmpty())//remove the values from index which are not in ascending order
+                    if (!toremoveFromFoundIndex.isEmpty())//remove the values from index which are not in ascending order
                     {
-                        for(int j = 0; j < toremoveFromFoundIndex.size(); j++)
-                        {
+                        for (int j = 0; j < toremoveFromFoundIndex.size(); j++) {
                             continousWordsFound.remove(toremoveFromFoundIndex.get(j));
                         }
                     }
@@ -123,14 +108,13 @@ public class IndexHolder
                 }
             }
         }
-        
+
         ArrayList tempArr = new ArrayList();
         tempArr.add(true); //Returns phrase as found with all the indexes where it was found
-        for(int  i = 0; i < continousWordsFound.size(); i++)
-        {
+        for (int i = 0; i < continousWordsFound.size(); i++) {
             tempArr.add(map.get(s[0]).get(continousWordsFound.get(i)));
         }
-        
+
         return tempArr;
     }
 }

@@ -1,0 +1,58 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : Sep 21, 2019, 11:11:44 PM
+    Author     : Lenovo
+*/
+
+.root {
+    
+    -fx-background-color: rgb(67, 66, 66);
+    
+
+}
+
+#openButton {
+    
+    -fx-fontsize : 110px;
+    -fx-background-color: rgb(253, 181, 13);
+    -fx-padding:8 8 8 8;
+    -fx-border-radius: 2px; 
+    -fx-font-weight: bold;
+
+}
+
+#resultDisplay {
+    -fx-fontsize : 110px;
+   
+    -fx-padding: 5 5 5 5;
+    -fx-border-radius: 2;
+    -fx-font-weight: bold;
+    
+}
+
+#buildIndex {
+    -fx-fontsize : 110px;
+    -fx-background-color: rgb(253, 181, 13);
+    -fx-padding: 8 8 8 8;
+    -fx-border-radius: 2;
+    -fx-font-weight: bold;
+    
+}
+
+#testPhrase {
+    -fx-fontsize : 110px;
+    -fx-background-color: rgb(253, 181, 13);
+    -fx-padding: 8 8 8 8;
+    -fx-border-radius: 2;
+    -fx-font-weight: bold;
+    
+}
+
+
+#path {
+    -fx-font-color: White;
+}

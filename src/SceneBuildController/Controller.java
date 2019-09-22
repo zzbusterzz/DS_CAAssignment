@@ -6,6 +6,7 @@
 package SceneBuildController;
 
 import indexingprogram.IndexHolder;
+import indexingprogram.WordDetail;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
@@ -32,12 +33,11 @@ import sun.security.ssl.Debug;
  *
  * @author 1
  */
-public class Controller implements Initializable 
-{
-    
+public class Controller implements Initializable {
+
     private Alert alert;
     private IndexHolder indexdata;
-    
+
     @FXML
     private TextField path;
     @FXML
@@ -55,143 +55,133 @@ public class Controller implements Initializable
      * Initializes the controller class.
      */
     @Override
-    public void initialize(URL url, ResourceBundle rb) 
-    {
+    public void initialize(URL url, ResourceBundle rb) {
         // TODO
         alert = new Alert(AlertType.NONE);
         indexdata = new IndexHolder();
-    }    
+    }
 
     @FXML
-    private void locateFile(MouseEvent event) 
-    {
+    private void locateFile(MouseEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open text file");
-        
+
         configureFileChooser(fileChooser);
         File file = fileChooser.showOpenDialog(openButton.getScene().getWindow());
-        if (file != null) 
-        {
-           path.setText(file.toString());
+        if (file != null) {
+            path.setText(file.toString());
         }
     }
-    
+
     @FXML
-    private void buildIndex(MouseEvent event) 
-    {
+    private void buildIndex(MouseEvent event) {
         String filePath = path.getText();
         File file = new File(filePath);
-        if (file.exists() && file.isFile())
-        {
+        if (file.exists() && file.isFile()) {
             System.out.println("file exists, and it is a file");
-             
+
             String ext = filePath.substring(filePath.lastIndexOf("."));
-            if( ext.equalsIgnoreCase(".pdf")  )
-            {
+            if (ext.equalsIgnoreCase(".pdf")) {
                 PDDocument pdDoc = null;
                 PDFTextStripper pdfStripper;
-
                 String parsedText;
-
                 //check if file is pdf
-                try {     
+                try {
                     pdDoc = PDDocument.load(file);
                     pdfStripper = new PDFTextStripper();
                     parsedText = pdfStripper.getText(pdDoc);
-                    
+
                     int wordCount = 0;
-                    String[] s;
-                    s = parsedText.split(" ");
-                    for(int i = 0; i < s.length; i++)
+                    String[] lineString = parsedText.split("\r\n");
+                    for(int i = 0; i < lineString.length; i++)//here i is our line number
                     {
-                        indexdata.AddIndex(s[i], wordCount);
-                        wordCount++;
+                        String[] splitSpace = lineString[i].split(" ");
+                        for (int j = 0; j < splitSpace.length; j++) {
+                            indexdata.AddIndex(splitSpace[j], new WordDetail(wordCount, i+1));
+                            wordCount++;
+                        }
                     }
                     
-                     Debug.println("word count",wordCount + ""  );
+
+                    Debug.println("word count", wordCount + "");
                     //System.out.println(parsedText.replaceAll("[^A-Za-z0-9. ]+", ""));
                 } catch (Exception e) {
                     e.printStackTrace();
                     try {
-                        if (pdDoc != null)
+                        if (pdDoc != null) {
                             pdDoc.close();
+                        }
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
                 }
-            }else{
-               
-                Scanner sc; 
+            } else {
+
+                Scanner sc;
                 try {
                     sc = new Scanner(file);
                     int wordCount = 0;
+                    int lineNumber = 1;
                     String[] s;
-                    while (sc.hasNextLine()) 
-                    {
+                    while (sc.hasNextLine()) {
                         s = sc.nextLine().split(" ");
-                        for(int i = 0; i < s.length; i++)
-                        {
-                            indexdata.AddIndex(s[i], wordCount);
+                        for (int i = 0; i < s.length; i++) {
+                            indexdata.AddIndex(s[i], new WordDetail(wordCount, lineNumber));
                             wordCount++;
                         }
+                        lineNumber++;
                     }
 
-                    Debug.println("word count",wordCount + ""  );
-                } 
-                catch (FileNotFoundException ex) 
-                {
+                    Debug.println("word count", wordCount + "");
+                } catch (FileNotFoundException ex) {
                     Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            }           
-        } 
-        else
-        {
+            }
+        } else {
             alert.setAlertType(AlertType.WARNING);
             alert.setHeaderText("Not a valid file type");
-            
+
             // show the dialog 
-            alert.show(); 
+            alert.show();
         }
     }
-    
+
     @FXML
-    private void checkPhraase(MouseEvent event) 
-    {
+    private void checkPhraase(MouseEvent event) {
         String phrase = phraseInput.getText();
-        if(phrase == null || phrase.equalsIgnoreCase(""))
-        {
+        if (phrase == null || phrase.equalsIgnoreCase("")) {
             resultDisplay.setText("Empty Phrase");
-        } else{
+        } else {
             //Todo: calculate the pharase
             List<Object> phraseValue = indexdata.CheckForPhrase(phrase);
-            
-            if((boolean)phraseValue.get(0))
-            {
+
+            if ((boolean) phraseValue.get(0)) {
                 String s = "";
-                for(int i = 1; i < phraseValue.size(); i++)
-                {
-                    if( i == phraseValue.size() - 1)
-                        s += (int)phraseValue.get(i);
-                    else
-                        s += (int)phraseValue.get(i) + ",";
+                WordDetail detail;
+                for (int i = 1; i < phraseValue.size(); i++) {
+                    detail = (WordDetail) phraseValue.get(i);
+                    if (i == phraseValue.size() - 1) {
+                        s += "Index - "+ detail.getIndex() + ", Line no - "+ detail.getLineNumber();
+                    } else {
+                        s += "Index - " + detail.getIndex() + ", Line no - "+ detail.getLineNumber() + "\n";
+                    }
                 }
-                
-                resultDisplay.setText("Phrase occurend : " + (phraseValue.size() - 1) + "\nPhrase found at index : " + s);
-            }
-            else
+
+                resultDisplay.setText("Phrase occurend : " + (phraseValue.size() - 1) + "\nPhrase found at following :\n" + s);
+            } else {
                 resultDisplay.setText("Phrase not found");
+            }
         }
     }
-            
-    private static void configureFileChooser(final FileChooser fileChooser) 
-    {  
-            fileChooser.setTitle("Open text files");
-            fileChooser.setInitialDirectory(
+
+    private static void configureFileChooser(final FileChooser fileChooser) {
+        fileChooser.setTitle("Open text files");
+        fileChooser.setInitialDirectory(
                 new File(System.getProperty("user.home"))
-            );                 
-            fileChooser.getExtensionFilters().addAll(
+        );
+        fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("TXT", "*.txt"),
                 new FileChooser.ExtensionFilter("PDF", "*.pdf")
-            );
+        );
     }
 }
