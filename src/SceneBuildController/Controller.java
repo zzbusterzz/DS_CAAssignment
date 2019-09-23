@@ -59,7 +59,6 @@ public class Controller implements Initializable {
     @FXML
     private TextArea resultDisplay;
 
-
     /**
      * Initializes the controller class.
      */
@@ -89,28 +88,27 @@ public class Controller implements Initializable {
         String filePath = path.getText();//get the particular file or get the particular folder for files to look
         File folder = new File(filePath);
         if (filePath.contains(".pdf") || filePath.contains(".txt")) {//Not needed as we are using directory selector
-            if(folder.isDirectory()){
-                ScanFile(filePath);
+            if(!folder.isDirectory()){
+                if(ScanFile(filePath))
+                    SuccessAlert();
             } else{
-                alert.setAlertType(AlertType.WARNING);
-                alert.setHeaderText("Not a valid file path");
-                // show the dialog 
-                alert.show();
+                FailureAlert("Not a valid file path");
             }
         } else {//Get all the pdf and txt files in that path
             if(folder.isDirectory()){
                 String[] files = folder.list();
+                boolean isAnyfileGenerated = false;
                 for (String file : files) {
                     if (file.contains(".pdf") || file.contains(".txt")) {
-                        ScanFile(filePath + "/" + file);
+                        if(ScanFile(filePath + "/" + file) && !isAnyfileGenerated){
+                            isAnyfileGenerated = true;
+                        }
                     }
                 }
+                if(isAnyfileGenerated)
+                    SuccessAlert();
             } else{
-                alert.setAlertType(AlertType.WARNING);
-                alert.setHeaderText("Not a valid file/folder path");
-
-                // show the dialog 
-                alert.show();
+               FailureAlert("Not a valid folder");
             }
         }
     }
@@ -176,7 +174,21 @@ public class Controller implements Initializable {
         }
     }
     
-    private void ScanFile(String filePath) {
+    private void SuccessAlert(){
+        alert.setAlertType(AlertType.INFORMATION);
+        alert.setHeaderText("Indexes Generated");
+        // show the dialog 
+        alert.show();
+    }
+    
+    private void FailureAlert(String Message){
+        alert.setAlertType(AlertType.WARNING);
+        alert.setHeaderText(Message);
+        // show the dialog 
+        alert.show();
+    }
+    
+    private boolean ScanFile(String filePath) {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
             System.out.println("file exists, and it is a file");
@@ -205,6 +217,7 @@ public class Controller implements Initializable {
                     }
 
                     Debug.println("word count", wordCount + "");
+                    return true;
                 } catch (Exception e) {
                     e.printStackTrace();
                     try {
@@ -232,17 +245,19 @@ public class Controller implements Initializable {
                     }
 
                     Debug.println("word count", wordCount + "");
+                    return true;
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
+            return false;
         } else {
             alert.setAlertType(AlertType.WARNING);
             alert.setHeaderText("Not a valid file type");
 
             // show the dialog 
             alert.show();
+            return false;
         }
     }
-        
 }

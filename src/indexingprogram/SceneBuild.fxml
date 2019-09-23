@@ -23,12 +23,11 @@
       </Text>
       <HBox alignment="CENTER" prefHeight="70.0" prefWidth="721.0" spacing="20.0">
          <children>
-            <Button fx:id="openButton" graphicTextGap="6.0" mnemonicParsing="false" onMouseClicked="#locateFile" text="Open Directory" textOverrun="WORD_ELLIPSIS">
+            <Button fx:id="openButton" graphicTextGap="6.0" mnemonicParsing="false" onMouseClicked="#locateFile" text="Open Directory" textOverrun="CLIP">
                <font>
                   <Font name="Bookman Old Style Bold" size="12.0" />
                </font></Button>
-            <Text fill="WHITE" fontSmoothingType="LCD" strokeType="OUTSIDE" strokeWidth="0.0" text="Path:" textAlignment="CENTER" />
-            <TextField fx:id="path" promptText="Click on Open File or Type the path to file manually">
+            <TextField fx:id="path" promptText="Click on Open Direcotry or Type the path to Directory/File manually">
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>
@@ -57,7 +56,7 @@
             </HBox>
          </children>
       </HBox>
-      <TextArea fx:id="resultDisplay" editable="false" prefHeight="274.0" prefWidth="590.0" promptText="Phase Result">
+      <TextArea fx:id="resultDisplay" editable="false" prefHeight="274.0" prefWidth="590.0" promptText="Phrase Result" VBox.vgrow="ALWAYS">
          <opaqueInsets>
             <Insets left="50.0" right="50.0" />
          </opaqueInsets>
@@ -68,9 +67,12 @@
             <Font name="Bookman Old Style" size="14.0" />
          </font>
       </TextArea>
-      <Button fx:id="buildIndex" mnemonicParsing="false" onMouseClicked="#buildIndex" text="Build Index">
+      <Button fx:id="buildIndex" mnemonicParsing="false" onMouseClicked="#buildIndex" text="Build Index" textOverrun="CLIP">
          <font>
             <Font name="Bookman Old Style Bold" size="14.0" />
-         </font></Button>
+         </font>
+         <VBox.margin>
+            <Insets bottom="20.0" />
+         </VBox.margin></Button>
    </children>
 </VBox>

@@ -164,7 +164,7 @@ public class IndexHolder {
                         for (int i = 0; i < continousWordsFound.size(); i++) {
                             indexofFileWhereFoundContValues.add(currentFileMap.get(s[0]).get(continousWordsFound.get(i)));
                         }
-                        Debug.println("fileNameKey " + fileNameKey, indexofFileWhereFoundContValues.size() + " : " + continousWordsFound.size());
+                       // Debug.println("fileNameKey " + fileNameKey, indexofFileWhereFoundContValues.size() + " : " + continousWordsFound.size());
                         foundKeyWordPlaces.put(fileNameKey, indexofFileWhereFoundContValues);//put multiple files input   
                     }
                     
